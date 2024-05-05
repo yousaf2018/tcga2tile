@@ -2,6 +2,11 @@ import os
 import argparse
 
 from code.tile_factory import TileFactory
+import os
+import shutil
+
+folder_path = "/kaggle/working/wsi-dataset"
+folder_path_out = "/kaggle/working/preprocessed_dataset_for_kat"
 
 
 def get_parser():
@@ -21,10 +26,21 @@ def get_parser():
 
 def main(args):
     print(args, args.__dict__)
-    tile_factory = TileFactory(args.slide_file, args.tile_size, args.overlap, output_path=args.output_path,
-                               num_workers=args.num_workers)
-    tile_factory.make_overview()
-    tile_factory.make_tiles()
+    # Iterate through all items in the folder
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        
+        # Check if it's a directory
+        if os.path.isdir(item_path):
+            # Get the name of the SVS file inside the directory
+            svs_files = [f for f in os.listdir(item_path) if f.endswith('.svs')]
+            if svs_files:
+                svs_file = svs_files[0]
+                print(svs_file)
+                tile_factory = TileFactory(item_path + "/" + svs_file, args.tile_size, args.overlap, output_path=folder_path_out,
+                                        num_workers=args.num_workers)
+                tile_factory.make_overview()
+                tile_factory.make_tiles()
 
 
 if __name__ == '__main__':
