@@ -5,7 +5,7 @@ from code.tile_factory import TileFactory
 import os
 import shutil
 
-folder_path = "/kaggle/working/wsi-dataset"
+folder_path = "/kaggle/input/tcga-wsi-svs"
 folder_path_out = "/kaggle/working/preprocessed_dataset_for_kat"
 
 
@@ -27,6 +27,7 @@ def get_parser():
 def main(args):
     print(args, args.__dict__)
     # Iterate through all items in the folder
+    counter = 0
     for item in os.listdir(folder_path):
         item_path = os.path.join(folder_path, item)
         
