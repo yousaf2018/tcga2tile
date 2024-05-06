@@ -38,7 +38,7 @@ def main(args):
             if svs_files:
                 svs_file = svs_files[0]
                 print(svs_file)
-                tile_factory = TileFactory(item_path + "/" + svs_file, args.tile_size, args.overlap, output_path=folder_path_out,
+                tile_factory = TileFactory(args.slide_file, args.tile_size, args.overlap, output_path=args.output_path,
                                         num_workers=args.num_workers)
                 tile_factory.make_overview()
                 tile_factory.make_tiles()
