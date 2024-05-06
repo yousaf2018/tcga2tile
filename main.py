@@ -25,10 +25,10 @@ def get_parser():
 
 def main(args):
     print(args, args.__dict__)
-    folder_path = args.input_path
-    folder_path_out = args.output_path
-    # Iterate through all items in the folder
-    counter = 0
+    # folder_path = args.input_path
+    # folder_path_out = args.output_path
+    # # Iterate through all items in the folder
+    # counter = 0
     # for item in os.listdir(folder_path):
     #     item_path = os.path.join(folder_path, item)
         
