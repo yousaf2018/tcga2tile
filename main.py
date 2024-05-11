@@ -29,12 +29,14 @@ def main(args):
     folder_path_out = args.output_path
     # Iterate through all items in the folder
     counter = 0
-    for item in os.listdir(folder_path):
-        if item.endswith('.svs'):
-            tile_factory = TileFactory(folder_path+"/"+item, args.tile_size, args.overlap, output_path=args.output_path,
-                                    num_workers=args.num_workers)
-            tile_factory.make_overview()
-            tile_factory.make_tiles()
+
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".svs"):
+                tile_factory = TileFactory(folder_path+"/"+file, args.tile_size, args.overlap, output_path=args.output_path,
+                                        num_workers=args.num_workers)
+                tile_factory.make_overview()
+                tile_factory.make_tiles()
 
 
 if __name__ == '__main__':
