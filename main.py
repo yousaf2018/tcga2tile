@@ -16,7 +16,7 @@ def get_parser():
                         help='overlap of tiles.')
     parser.add_argument('--slide-file', type=str, default=None,
                         help='path of <has_been_downloaded> file.')
-    parser.add_argument('--num-workers', type=str, default=4,
+    parser.add_argument('--num-workers', type=str, default=8,
                         help='num of process for cropping slide.')
     parser.add_argument('--output_path', type=str, default=None,
                         help='path to save the tiles.')

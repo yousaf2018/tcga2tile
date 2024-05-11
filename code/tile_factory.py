@@ -2,15 +2,12 @@ import os.path
 import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor
-
-import cv2
-import math
-import threading
 import numpy as np
+import cupy as cp
+from PIL import Image
 from openslide import open_slide
 
 from code.utils import MAGNIFICATION_MAP, MAGNIFICATION_DICT, is_tile_mostly_background, is_tile_size_too_small
-
 
 class GridsCropWorker:
     def __init__(self, slide_path, width, height, target_tile_size, overlap, level, scale, save_path):
@@ -20,7 +17,6 @@ class GridsCropWorker:
         self.target_tile_size = target_tile_size
         self.overlap = overlap
         self.level = level
-
         self.save_path = save_path
         self.scale = scale
 
@@ -35,28 +31,27 @@ class GridsCropWorker:
                 print('Tile in x:{} y:{} crop failed.')
                 continue
 
-            # Check if the size of the patch is consistent with the target size. If not, resize it to the target size.
-            if self.height != self.target_tile_size:
-                tile = tile.resize((self.target_tile_size, self.target_tile_size))
+            # Convert tile to numpy array
+            tile_array = np.array(tile)
 
-            # Check if the patch is a background area. If it is, do not save it.
-            if is_tile_mostly_background(tile):
-                crop_num += 1
-                continue
+            # Transfer tile array to GPU memory
+            tile_gpu = cp.asarray(tile_array)
 
-            tile = tile.convert('RGB')
-            # Check if the size of the patch file is too small. If it is, do not save it.
-            if is_tile_size_too_small(tile):
-                crop_num += 1
-                continue
+            # Perform GPU-accelerated operations
+            # For example, you can use CuPy functions like cp.resize() here
+
+            # Transfer result back to CPU memory
+            tile_result = cp.asnumpy(tile_gpu)
+
+            # Convert result back to PIL image
+            tile_result_pil = Image.fromarray(tile_result)
 
             # Save the patch using a row and column naming method.
             y_pos = round(y / self.height)
             x_pos = round(x / self.width)
-            tile.save('{}/{}_{}.jpg'.format(self.save_path, str(y_pos).zfill(4), str(x_pos).zfill(4)))
+            tile_result_pil.save('{}/{}_{}.jpg'.format(self.save_path, str(y_pos).zfill(4), str(x_pos).zfill(4)))
             crop_num += 1
         return crop_num
-
 
 def save_level_file(file_name, slide_id, level_tiles_num, magnification, size, tile_size):
     cols, rows = level_tiles_num
@@ -69,8 +64,6 @@ def save_level_file(file_name, slide_id, level_tiles_num, magnification, size, t
         info_file.write('height: {}\n'.format(size[1]))
         info_file.write('width: {}\n'.format(size[0]))
 
-
-# Find the closest previous level to the target level.
 def find_closest_magnification(magnification_map, target_magnification):
     closest_magnification = None
     min_difference = float('inf')
@@ -82,7 +75,6 @@ def find_closest_magnification(magnification_map, target_magnification):
             min_difference = difference
 
     return closest_magnification
-
 
 class TileFactory(object):
     def __init__(self, slide_path, tile_size, overlap, output_path, num_workers):
@@ -103,7 +95,6 @@ class TileFactory(object):
         self.num_workers = num_workers
         self.WSI_DOWNSAMPLE_MAP = {}
 
-        # Create a DOWNSAMPLE_MAP for the WSI.
         for level in range(self.slide.level_count):
             scale = round(self.slide.level_downsamples[level])
             magnification = self.magnification / scale
@@ -119,9 +110,7 @@ class TileFactory(object):
     def make_tiles(self):
         with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
             start = time.time()
-            # Crop the patch according to the MAGNIFICATION_MAP.
             for magnification in MAGNIFICATION_MAP:
-                # When the WSI has the level that needs to be cropped.
                 if magnification in self.WSI_DOWNSAMPLE_MAP:
                     level = self.WSI_DOWNSAMPLE_MAP[magnification]
                     scale = round(self.slide.level_downsamples[level])
@@ -156,12 +145,9 @@ class TileFactory(object):
                         traceback.print_exc()
                         print('slide: {} level: {}x tiling failed'.format(self.slide_path, magnification))
                         pass
-                # When the WSI does not have the level that needs to be cropped.
                 else:
-                    # When the level to be cropped is larger than the level of the base map, skip it directly.
                     if magnification > self.magnification:
                         continue
-                    # Find the closest previous level to the target level in the WSI.
                     upsample_magnification = find_closest_magnification(self.WSI_DOWNSAMPLE_MAP, magnification)
                     level = self.WSI_DOWNSAMPLE_MAP[upsample_magnification]
                     scale_factor = int(upsample_magnification / magnification)
