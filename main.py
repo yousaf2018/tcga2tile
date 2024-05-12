@@ -42,7 +42,8 @@ def main(args):
                                             num_workers=args.num_workers)
                     tile_factory.make_overview()
                     tile_factory.make_tiles()
-                    counter += 1
+
+        counter += 1
 
 
 if __name__ == '__main__':
