@@ -20,6 +20,10 @@ def get_parser():
                         help='num of process for cropping slide.')
     parser.add_argument('--output_path', type=str, default=None,
                         help='path to save the tiles.')
+    parser.add_argument('--start', type=int, default=None,
+                        help='counter for total wsi to process')
+    parser.add_argument('--end', type=int, default=None,
+                        help='counter for total wsi to process')
     return parser
 
 
@@ -31,12 +35,14 @@ def main(args):
     counter = 0
 
     for root, dirs, files in os.walk(folder_path):
-        for file in files:
-            if file.endswith(".svs"):
-                tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
-                                        num_workers=args.num_workers)
-                tile_factory.make_overview()
-                tile_factory.make_tiles()
+        if counter>=args.start and counter <args.end:
+            for file in files:
+                if file.endswith(".svs"):
+                    tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
+                                            num_workers=args.num_workers)
+                    tile_factory.make_overview()
+                    tile_factory.make_tiles()
+                    counter += 1
 
 
 if __name__ == '__main__':
