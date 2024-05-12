@@ -38,6 +38,7 @@ def main(args):
         if counter>=args.start and counter <args.end:
             for file in files:
                 if file.endswith(".svs"):
+                    print(os.path.join(root, file))
                     tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
                                             num_workers=args.num_workers)
                     tile_factory.make_overview()
