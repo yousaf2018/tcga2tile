@@ -7,19 +7,14 @@ import io
 
 
 # max number of processes for parallelism
-N_PROCESSES = 5
+N_PROCESSES = 2
 
 MAGNIFICATION_DICT = {
-    'Large': 40,
-    'Medium': 20,
     'Small': 10,
     'Overview': 5,
-    'Minimum': 2.5
 }
 
 MAGNIFICATION_MAP = {
-    40: 'Large',
-    20: 'Medium',
     10: 'Small',
     5: 'Overview'
 }
