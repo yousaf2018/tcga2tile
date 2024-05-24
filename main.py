@@ -35,16 +35,14 @@ def main(args):
     counter = 0
 
     for root, dirs, files in os.walk(folder_path):
-        if counter>=args.start and counter <args.end:
-            for file in files:
-                if file.endswith(".svs"):
-                    print(os.path.join(root, file))
-                    tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
-                                            num_workers=args.num_workers)
-                    tile_factory.make_overview()
-                    tile_factory.make_tiles()
+        for file in files:
+            if file.endswith(".svs"):
+                print(os.path.join(root, file))
+                tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
+                                        num_workers=args.num_workers)
+                tile_factory.make_overview()
+                tile_factory.make_tiles()
 
-        counter += 1
 
 
 if __name__ == '__main__':
