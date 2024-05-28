@@ -113,91 +113,97 @@ class TileFactory(object):
             pass
 
     def make_overview(self):
-        slide_size = self.slide.level_dimensions[0]
-        overview_scale = self.magnification / MAGNIFICATION_DICT['Overview']
-        overview_size = (int(slide_size[0] / overview_scale), int(slide_size[1] / overview_scale))
-        overview_image = self.slide.get_thumbnail(overview_size)
-        overview_image.save('{}/Overview.jpg'.format(self.output_path))
+        try:
+            slide_size = self.slide.level_dimensions[0]
+            overview_scale = self.magnification / MAGNIFICATION_DICT['Overview']
+            overview_size = (int(slide_size[0] / overview_scale), int(slide_size[1] / overview_scale))
+            overview_image = self.slide.get_thumbnail(overview_size)
+            overview_image.save('{}/Overview.jpg'.format(self.output_path))
+        except Exception as ec:
+            pass
 
     def make_tiles(self):
-        with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
-            start = time.time()
-            # Crop the patch according to the MAGNIFICATION_MAP.
-            for magnification in MAGNIFICATION_MAP:
-                # When the WSI has the level that needs to be cropped.
-                if magnification in self.WSI_DOWNSAMPLE_MAP:
-                    level = self.WSI_DOWNSAMPLE_MAP[magnification]
-                    scale = round(self.slide.level_downsamples[level])
-                    tile_size = self.tile_size
-                    try:
-                        magnification_name = MAGNIFICATION_MAP[magnification]
-                        level_slide_size = self.slide.level_dimensions[level]
-                        level_tiles_num = [int(level_slide_size[0] / tile_size),
-                                           int(level_slide_size[1] / tile_size)]
-                        save_level_file('{}/{}.txt'.format(self.output_path, magnification_name), self.slide_id,
-                                        level_tiles_num, magnification, level_slide_size, tile_size)
+        try:
+            with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+                start = time.time()
+                # Crop the patch according to the MAGNIFICATION_MAP.
+                for magnification in MAGNIFICATION_MAP:
+                    # When the WSI has the level that needs to be cropped.
+                    if magnification in self.WSI_DOWNSAMPLE_MAP:
+                        level = self.WSI_DOWNSAMPLE_MAP[magnification]
+                        scale = round(self.slide.level_downsamples[level])
+                        tile_size = self.tile_size
+                        try:
+                            magnification_name = MAGNIFICATION_MAP[magnification]
+                            level_slide_size = self.slide.level_dimensions[level]
+                            level_tiles_num = [int(level_slide_size[0] / tile_size),
+                                            int(level_slide_size[1] / tile_size)]
+                            save_level_file('{}/{}.txt'.format(self.output_path, magnification_name), self.slide_id,
+                                            level_tiles_num, magnification, level_slide_size, tile_size)
 
-                        crop_step = tile_size - self.overlap
-                        xs = np.arange(0, level_slide_size[0] - tile_size, crop_step)
-                        ys = np.arange(0, level_slide_size[1] - tile_size, crop_step)
+                            crop_step = tile_size - self.overlap
+                            xs = np.arange(0, level_slide_size[0] - tile_size, crop_step)
+                            ys = np.arange(0, level_slide_size[1] - tile_size, crop_step)
 
-                        x_grids, y_grids = np.meshgrid(xs, ys)
-                        grids = np.stack([x_grids.reshape(-1), y_grids.reshape(-1)], 1)
+                            x_grids, y_grids = np.meshgrid(xs, ys)
+                            grids = np.stack([x_grids.reshape(-1), y_grids.reshape(-1)], 1)
 
-                        save_path = os.path.join(self.output_path, magnification_name)
-                        if not os.path.exists(save_path):
-                            os.makedirs(save_path)
+                            save_path = os.path.join(self.output_path, magnification_name)
+                            if not os.path.exists(save_path):
+                                os.makedirs(save_path)
 
-                        grid_crop_worker = GridsCropWorker(self.slide_path, tile_size, tile_size, self.tile_size,
-                                                           self.overlap, level, scale, save_path)
-                        crop_num = list(executor.map(grid_crop_worker.crop_tiles,
-                                                     np.array_split(grids, self.num_workers)))
-                        crop_num = sum(crop_num)
-                        if crop_num != len(grids):
-                            print('slide: {} cropped incompletely')
-                    except Exception as e:
-                        traceback.print_exc()
-                        print('slide: {} level: {}x tiling failed'.format(self.slide_path, magnification))
-                        pass
-                # When the WSI does not have the level that needs to be cropped.
-                else:
-                    # When the level to be cropped is larger than the level of the base map, skip it directly.
-                    if magnification > self.magnification:
-                        continue
-                    # Find the closest previous level to the target level in the WSI.
-                    upsample_magnification = find_closest_magnification(self.WSI_DOWNSAMPLE_MAP, magnification)
-                    level = self.WSI_DOWNSAMPLE_MAP[upsample_magnification]
-                    scale_factor = int(upsample_magnification / magnification)
-                    tile_size = self.tile_size * scale_factor
-                    scale = round(self.slide.level_downsamples[level])
-                    try:
-                        magnification_name = MAGNIFICATION_MAP[magnification]
-                        level_slide_size = self.slide.level_dimensions[level]
-                        level_tiles_num = [int(level_slide_size[0] / tile_size),
-                                           int(level_slide_size[1] / tile_size)]
-                        save_level_file('{}/{}.txt'.format(self.output_path, magnification_name), self.slide_id,
-                                        level_tiles_num, magnification, level_slide_size, tile_size)
+                            grid_crop_worker = GridsCropWorker(self.slide_path, tile_size, tile_size, self.tile_size,
+                                                            self.overlap, level, scale, save_path)
+                            crop_num = list(executor.map(grid_crop_worker.crop_tiles,
+                                                        np.array_split(grids, self.num_workers)))
+                            crop_num = sum(crop_num)
+                            if crop_num != len(grids):
+                                print('slide: {} cropped incompletely')
+                        except Exception as e:
+                            traceback.print_exc()
+                            print('slide: {} level: {}x tiling failed'.format(self.slide_path, magnification))
+                            pass
+                    # When the WSI does not have the level that needs to be cropped.
+                    else:
+                        # When the level to be cropped is larger than the level of the base map, skip it directly.
+                        if magnification > self.magnification:
+                            continue
+                        # Find the closest previous level to the target level in the WSI.
+                        upsample_magnification = find_closest_magnification(self.WSI_DOWNSAMPLE_MAP, magnification)
+                        level = self.WSI_DOWNSAMPLE_MAP[upsample_magnification]
+                        scale_factor = int(upsample_magnification / magnification)
+                        tile_size = self.tile_size * scale_factor
+                        scale = round(self.slide.level_downsamples[level])
+                        try:
+                            magnification_name = MAGNIFICATION_MAP[magnification]
+                            level_slide_size = self.slide.level_dimensions[level]
+                            level_tiles_num = [int(level_slide_size[0] / tile_size),
+                                            int(level_slide_size[1] / tile_size)]
+                            save_level_file('{}/{}.txt'.format(self.output_path, magnification_name), self.slide_id,
+                                            level_tiles_num, magnification, level_slide_size, tile_size)
 
-                        crop_step = tile_size - self.overlap
-                        xs = np.arange(0, level_slide_size[0] - tile_size, crop_step)
-                        ys = np.arange(0, level_slide_size[1] - tile_size, crop_step)
+                            crop_step = tile_size - self.overlap
+                            xs = np.arange(0, level_slide_size[0] - tile_size, crop_step)
+                            ys = np.arange(0, level_slide_size[1] - tile_size, crop_step)
 
-                        x_grids, y_grids = np.meshgrid(xs, ys)
-                        grids = np.stack([x_grids.reshape(-1), y_grids.reshape(-1)], 1)
+                            x_grids, y_grids = np.meshgrid(xs, ys)
+                            grids = np.stack([x_grids.reshape(-1), y_grids.reshape(-1)], 1)
 
-                        save_path = os.path.join(self.output_path, magnification_name)
-                        if not os.path.exists(save_path):
-                            os.makedirs(save_path)
+                            save_path = os.path.join(self.output_path, magnification_name)
+                            if not os.path.exists(save_path):
+                                os.makedirs(save_path)
 
-                        grid_crop_worker = GridsCropWorker(self.slide_path, tile_size, tile_size, self.tile_size,
-                                                           self.overlap, level, scale, save_path)
-                        crop_num = list(executor.map(grid_crop_worker.crop_tiles,
-                                                     np.array_split(grids, self.num_workers)))
-                        crop_num = sum(crop_num)
-                        if crop_num != len(grids):
-                            print('slide: {} cropped incompletely')
-                    except Exception as e:
-                        traceback.print_exc()
-                        print('slide: {} level: {}x tiling failed'.format(self.slide_path, magnification))
-                        pass
-            print(time.time() - start)
+                            grid_crop_worker = GridsCropWorker(self.slide_path, tile_size, tile_size, self.tile_size,
+                                                            self.overlap, level, scale, save_path)
+                            crop_num = list(executor.map(grid_crop_worker.crop_tiles,
+                                                        np.array_split(grids, self.num_workers)))
+                            crop_num = sum(crop_num)
+                            if crop_num != len(grids):
+                                print('slide: {} cropped incompletely')
+                        except Exception as e:
+                            traceback.print_exc()
+                            print('slide: {} level: {}x tiling failed'.format(self.slide_path, magnification))
+                            pass
+                print(time.time() - start)
+        except Exception as ec:
+            pass
