@@ -7,7 +7,7 @@ import shutil
 import pandas as pd
 
 
-df = pd.read_csv("exists.csv")
+df = pd.read_csv("/kaggle/working/tcga2tile/exists.csv")
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Data preprocessing module: sampling tiles from slide')
