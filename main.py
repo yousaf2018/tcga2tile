@@ -39,7 +39,7 @@ def main(args):
         for file in files:
             # print(file)   
             
-            if file.endswith(".svs") and str(file.split(".svs")[0]) not in df["PATIENT"].values:
+            if file.endswith(".svs") and file.split(".svs")[0] not in df["PATIENT"].values:
                 print(counter)
                 # print(os.path.join(root, file))
                 tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
