@@ -37,7 +37,8 @@ def main(args):
 
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            # print(file)
+            print(file)   
+            
             if file.endswith(".svs") and file.split(".svs")[0] not in df["PATIENT"].values:
                 print(counter)
                 # print(os.path.join(root, file))
