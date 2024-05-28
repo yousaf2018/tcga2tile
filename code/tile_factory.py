@@ -92,22 +92,25 @@ class TileFactory(object):
         self.output_path = os.path.join(output_path, self.slide_id)
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
-        self.slide = open_slide(slide_path)
-        self.tile_size = int(tile_size)
-        self.overlap = int(overlap)
+        try:
+            self.slide = open_slide(slide_path)
+            self.tile_size = int(tile_size)
+            self.overlap = int(overlap)
 
-        if 'openslide.objective-power' not in self.slide.properties.keys():
-            raise KeyError
+            if 'openslide.objective-power' not in self.slide.properties.keys():
+                raise KeyError
 
-        self.magnification = int(self.slide.properties['openslide.objective-power'])
-        self.num_workers = num_workers
-        self.WSI_DOWNSAMPLE_MAP = {}
+            self.magnification = int(self.slide.properties['openslide.objective-power'])
+            self.num_workers = num_workers
+            self.WSI_DOWNSAMPLE_MAP = {}
 
-        # Create a DOWNSAMPLE_MAP for the WSI.
-        for level in range(self.slide.level_count):
-            scale = round(self.slide.level_downsamples[level])
-            magnification = self.magnification / scale
-            self.WSI_DOWNSAMPLE_MAP[magnification] = level
+            # Create a DOWNSAMPLE_MAP for the WSI.
+            for level in range(self.slide.level_count):
+                scale = round(self.slide.level_downsamples[level])
+                magnification = self.magnification / scale
+                self.WSI_DOWNSAMPLE_MAP[magnification] = level
+        except Exception as ec:
+            pass
 
     def make_overview(self):
         slide_size = self.slide.level_dimensions[0]
