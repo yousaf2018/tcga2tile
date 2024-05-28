@@ -4,9 +4,10 @@ import argparse
 from code.tile_factory import TileFactory
 import os
 import shutil
+import pandas as pd
 
 
-
+df = pd.read_csv("exists.csv")
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Data preprocessing module: sampling tiles from slide')
@@ -36,7 +37,7 @@ def main(args):
 
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith(".svs"):
+            if file.endswith(".svs") and file.split(".svs")[0] in df["PATIENT"].values:
                 print(os.path.join(root, file))
                 tile_factory = TileFactory(os.path.join(root, file), args.tile_size, args.overlap, output_path=args.output_path,
                                         num_workers=args.num_workers)
